@@ -2,6 +2,8 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Papa, ParseResult } from 'ngx-papaparse';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
+import { newValues, Values } from './models/values.model';
+import { Category } from './models/categories.model';
 
 @Component({
   selector: 'app-root',
@@ -54,6 +56,68 @@ export class AppComponent implements OnInit, OnDestroy {
         this.json2 = JSON.parse(data);
         console.log(this.json2);
       });
+  }
+
+  test(e?: any) {
+    let hola = {
+      categories: {
+        car: '+12%',
+        outlet: '-1%',
+        bargain: '+5%+1€',
+        home: '+3€-1%',
+        music: '+3.1%',
+        mobile: '+12€',
+        '*': '+20%',
+      },
+    };
+    console.log(Object.keys(hola.categories));
+    console.log(Object.values(hola.categories));
+    console.log(Object.values(this.json1['categories']));
+    console.log(e);
+  }
+
+  getValues(stringValue: string): Values[] {
+    let percent = '%';
+    let currency = '€';
+    let value: Values[] = [];
+    let newArray = stringValue.split('');
+    let tempStringValue: string;
+    let reference = 0;
+
+    for (let i = newArray.length - 1; i >= 0; i--) {
+      if (newArray[i] === percent) {
+        value.splice(reference, 0, { ...newValues });
+        value[reference].unit = percent;
+        value[reference].value = parseFloat(tempStringValue);
+        tempStringValue = '';
+        reference++;
+      } else if (newArray[i] === currency) {
+        value.splice(reference, 0, { ...newValues });
+        value[reference].unit = currency;
+        value[reference - 1].value = parseFloat(tempStringValue);
+        tempStringValue = '';
+        reference++;
+      } else {
+        tempStringValue = newArray[i] + tempStringValue;
+        if (i === 0) {
+          value[reference - 1].value = parseFloat(tempStringValue);
+          return value;
+        }
+      }
+    }
+  }
+
+  getCategories(fileName: any) {
+    let categories: Category[];
+    let fileKeys = Object.keys(fileName);
+    let fileValues = Object.values(fileName);
+    // for (let i = 0; i < fileKeys.length; i++) {
+    //   let tempValue: Values;
+    //   tempValue.title = fileKeys[i]
+    //   tempValue.value = fileValues[i];
+    //   test.push()
+
+    // }
   }
 
   ngOnDestroy(): void {
