@@ -30,7 +30,6 @@ export class AppComponent implements OnInit, OnDestroy {
         this.papa.parse(data, {
           complete: (result) => {
             this.csv1 = result.data;
-            console.log(this.csv1);
           },
         });
       });
@@ -39,9 +38,6 @@ export class AppComponent implements OnInit, OnDestroy {
       .subscribe((data) => {
         let temp = JSON.parse(data);
         this.json1 = temp['categories'];
-        console.log(this.json1);
-
-        console.log(this.json1['bargain']);
       });
 
     this.csv2Subs = this.http
@@ -50,7 +46,6 @@ export class AppComponent implements OnInit, OnDestroy {
         this.papa.parse(data, {
           complete: (result) => {
             this.csv2 = result.data;
-            console.log(this.csv2);
           },
         });
       });
@@ -59,7 +54,6 @@ export class AppComponent implements OnInit, OnDestroy {
       .subscribe((data) => {
         let temp = JSON.parse(data);
         this.json2 = temp['categories'];
-        console.log(this.json2);
       });
   }
 
@@ -77,108 +71,83 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     }
   }
+  getFormuleValue(stringCostValue: string): string {
+    let newArray = stringCostValue.split('');
+    for (let i = 0; i < newArray.length; i++) {
+      if (newArray[i] === '.') {
+        newArray.splice(i, 1);
+        i++;
+      } else if (newArray[i] === ',') {
+        newArray[i] = '.';
+      }
+      if (i === newArray.length - 1) {
+        return newArray.join('');
+      }
+    }
+  }
 
-  test(fileName: Array<string>, categoriesFile: Object) {
+  getProfit(fileName: Array<string>, categoriesFile: Object): Profit[] {
     let categories = this.getCategories(categoriesFile);
-    console.log(categories);
-    
     let resp: Profit[] = [];
     let categoryIndex: number = fileName[0].indexOf('CATEGORY');
     let costIndex: number = fileName[0].indexOf('COST');
     let quantityIndex: number = fileName[0].indexOf('QUANTITY');
     let categoryFound: Category;
     let categotyDefault: Category;
-    let exist:boolean
-    let existIndex:number;
+    let exist: boolean;
+    let existIndex: number;
     for (let i = 1; i < fileName.length; i++) {
       if (resp.length === 0) {
         resp.splice(0, 0, { ...newProfit });
         resp[resp.length - 1].category = fileName[i][categoryIndex];
-      } else if(resp.length > 0){
-        resp.forEach((data:Profit, a)=>{
+      } else if (resp.length > 0) {
+        resp.forEach((data: Profit, a) => {
           if (data.category === fileName[i][categoryIndex]) {
-            existIndex = a
-            exist = true
+            existIndex = a;
+            exist = true;
           }
-          console.log('Repetido');
-        })
+        });
         if (!exist) {
           resp.splice(resp.length, 0, { ...newProfit });
           resp[resp.length - 1].category = fileName[i][categoryIndex];
-        } else {
-          // resp.pop();
-          console.log('EXIASTE');
-     
         }
-        console.log(resp);
-        
       }
-
       categoryFound = null;
       categories.forEach((category: Category) => {
         if (category.category === fileName[i][categoryIndex]) {
           categoryFound = category;
-          return console.log(categoryFound);
         } else if (category.category === '*') {
           categotyDefault = category;
         }
       });
-      if (categoryFound != null) {
-        let cost = parseFloat(this.getCostValue(fileName[i][costIndex]));
-        let costTemp = 0;
-        categoryFound.value.forEach((values: Values) => {
-          values.unit === '%'
-            ? (costTemp = costTemp + cost * values.value)
-            : (costTemp =
-                costTemp +
-                parseFloat(this.getCostValue(fileName[i][quantityIndex])) *
-                  values.value);
-        });
-        if (exist) {
-          resp[existIndex].profit = resp[existIndex].profit+ costTemp;
-        } else{
-
-          resp[resp.length - 1].profit = costTemp;
-        }
-      } else if( categoryFound === null) {
+      if (categoryFound === null) {
         categoryFound = categotyDefault;
-        console.log(categoryFound)
-        
-        let cost = parseFloat(this.getCostValue(fileName[i][costIndex]));
-        let costTemp=0;
-        categotyDefault.value.forEach((values: Values) => {
-          values.unit === '%'
-            ? (costTemp = costTemp + cost * values.value)
-            : (costTemp =
-                costTemp +
-                parseFloat(this.getCostValue(fileName[i][quantityIndex])) *
-                  values.value);
-        });
-        if (exist) {
-          resp[existIndex].profit = resp[existIndex].profit+costTemp;
-        } else{
-
-          resp[resp.length - 1].profit = costTemp;
-        }
       }
-      console.log(resp);
-      // if(exist){
-      //   i++
-      // }
+      let cost = parseFloat(this.getCostValue(fileName[i][costIndex]));
+      let costTemp = 0;
+      categoryFound.value.forEach((values: Values) => {
+        values.unit === '%'
+          ? (costTemp =
+              costTemp +
+              cost *
+                (values.value / 100) *
+                parseFloat(this.getCostValue(fileName[i][quantityIndex])))
+          : (costTemp =
+              costTemp + parseFloat(fileName[i][quantityIndex]) * values.value);
+      });
+      if (exist) {
+        resp[existIndex].profit = resp[existIndex].profit + costTemp;
+      } else {
+        resp[resp.length - 1].profit = costTemp;
+      }
+      if (i === fileName.length-1) {
+        console.log(resp);
+        return resp
+      }
       categoryFound = null;
       existIndex = 0;
-          exist = false;
+      exist = false;
     }
-
-    // if (fileName[0].indexOf('CATEGORY') > -1) {
-    //   console.log(fileName[0].indexOf('CATEGORY'));
-
-    //   console.log('si hay');
-    // }
-
-    // // console.log(this.csv1.data);
-    // // console.log(e);
-    // console.log('sigue');
   }
 
   getValues(stringValue: string): Values[] {
@@ -224,7 +193,6 @@ export class AppComponent implements OnInit, OnDestroy {
       categories[i].category = fileKeys[i];
       categories[i].value = this.getValues(fileValues[i]);
       if (i === fileKeys.length - 1) {
-        console.log(categories);
         return categories;
       }
     }
