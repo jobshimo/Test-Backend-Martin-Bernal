@@ -123,6 +123,10 @@
           }
         }
       }
-    }},
-  "defaultProject": "ximdexTestBackend"
+    }
+  },
+  "defaultProject": "ximdexTestBackend",
+  "cli": {
+    "analytics": "c5b52fbd-4059-458c-8cae-6f030a4acd88"
+  }
 }
