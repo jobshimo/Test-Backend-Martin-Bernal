@@ -1,12 +1,20 @@
 <div class="container mt-3">
     <div class="jumbotron">
         <h1 class="display-4">XIMDEX Backend Test</h1>
-        <p class="lead">Test carried out by Martín Bernal.</p>
+        <p class="lead">Realizado por Martín Bernal.</p>
         <hr class="my-4">
-        <p>It uses utility classes for typography and spacing to space content out within the larger container.</p>
-        <a (click)="getCategories(json2)" class="btn btn-primary btn-lg" href="#" role="button">Test Categories</a>
-        <!-- <a (click)="getValues('-2231€+12€')" class="btn btn-primary btn-lg" href="#" role="button">Test values</a> -->
-        <a (click)="getProfit(csv1, json1)" class="btn btn-primary btn-lg ml-2 mr-2" href="#" role="button">Test</a>
-        <a (click)="getCostValue('1.643,50€')" class="btn btn-primary btn-lg ml-2 mr-2" href="#" role="button">Test Array</a>
+        <a (click)="getProfit(csv1, json1)" class="btn btn-primary btn-lg ml-2 mr-2" href="#" role="button">Ejemplo 1</a>
+        <a (click)="getProfit(csv2, json2)" class="btn btn-primary btn-lg ml-2 mr-2" href="#" role="button">Ejemplo 2</a>
+        <div class="mt-2 mb-2">
+            <div class="text-center">
+                <p>Para obtener el resultado llemando el metodo desde la consola de Chorme seguir los siguientes pasos:</p>
+                <img src="../assets/img/app-root.png" class="img-fluid mt-2 mb-2" alt="Responsive image">
+                <p>Seleccionar la etiqueta "app-root" con el inspector de codigo</p>
+                <img src="../assets/img/getComponent.png" class="img-fluid mt-2 mb-2" alt="Responsive image">
+                <p>En la consola teclear : let test = ng.getComponent($0);</p>
+                <p>Para obtener los resultados del ejemplo 1 llamar al metodo tecleando: "test.getProfit(test.csv1,test.json1)"</p>
+                <p>Para obtener los resultados del ejemplo 2 llamar al metodo tecleando: "test.getProfit(test.csv2,test.json2)"</p>
+            </div>
+        </div>
     </div>
 </div>
