@@ -71,20 +71,6 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     }
   }
-  getFormuleValue(stringCostValue: string): string {
-    let newArray = stringCostValue.split('');
-    for (let i = 0; i < newArray.length; i++) {
-      if (newArray[i] === '.') {
-        newArray.splice(i, 1);
-        i++;
-      } else if (newArray[i] === ',') {
-        newArray[i] = '.';
-      }
-      if (i === newArray.length - 1) {
-        return newArray.join('');
-      }
-    }
-  }
 
   getProfit(fileName: Array<string>, categoriesFile: Object): Profit[] {
     let categories = this.getCategories(categoriesFile);
@@ -123,8 +109,8 @@ export class AppComponent implements OnInit, OnDestroy {
       if (categoryFound === null) {
         categoryFound = categotyDefault;
       }
-      let cost = parseFloat(this.getCostValue(fileName[i][costIndex]));
-      let costTemp = 0;
+      let cost: number = parseFloat(this.getCostValue(fileName[i][costIndex]));
+      let costTemp: number = 0;
       categoryFound.value.forEach((values: Values) => {
         values.unit === '%'
           ? (costTemp =
@@ -135,14 +121,12 @@ export class AppComponent implements OnInit, OnDestroy {
           : (costTemp =
               costTemp + parseFloat(fileName[i][quantityIndex]) * values.value);
       });
-      if (exist) {
-        resp[existIndex].profit = resp[existIndex].profit + costTemp;
-      } else {
-        resp[resp.length - 1].profit = costTemp;
-      }
-      if (i === fileName.length-1) {
+      exist
+        ? (resp[existIndex].profit = resp[existIndex].profit + costTemp)
+        : (resp[resp.length - 1].profit = costTemp);
+      if (i === fileName.length - 1) {
         console.log(resp);
-        return resp
+        return resp;
       }
       categoryFound = null;
       existIndex = 0;
