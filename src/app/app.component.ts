@@ -2,8 +2,9 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Papa, ParseResult } from 'ngx-papaparse';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
-import { newValues, Values } from './models/values.model';
-import { Category } from './models/categories.model';
+import { Values, newValues } from './models/values.model';
+import { Category, newCategory } from './models/categories.model';
+import { Profit, newProfit } from './models/profit.model';
 
 @Component({
   selector: 'app-root',
@@ -14,13 +15,13 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(private papa: Papa, private http: HttpClient) {}
 
   csv1Subs: Subscription;
-  csv1: ParseResult;
+  csv1: Array<string>;
   json1Subs: Subscription;
-  json1: ParseResult;
+  json1: Object;
   csv2Subs: Subscription;
-  csv2: ParseResult;
+  csv2: Array<string>;
   json2Subs: Subscription;
-  json2: ParseResult;
+  json2: Object;
 
   ngOnInit(): void {
     this.csv1Subs = this.http
@@ -28,7 +29,7 @@ export class AppComponent implements OnInit, OnDestroy {
       .subscribe((data) => {
         this.papa.parse(data, {
           complete: (result) => {
-            this.csv1 = result;
+            this.csv1 = result.data;
             console.log(this.csv1);
           },
         });
@@ -36,8 +37,11 @@ export class AppComponent implements OnInit, OnDestroy {
     this.json1Subs = this.http
       .get('../assets/csvFile/example1/example1.json', { responseType: 'text' })
       .subscribe((data) => {
-        this.json1 = JSON.parse(data);
-        console.log(this.json1['categories']['bargain']);
+        let temp = JSON.parse(data);
+        this.json1 = temp['categories'];
+        console.log(this.json1);
+
+        console.log(this.json1['bargain']);
       });
 
     this.csv2Subs = this.http
@@ -45,7 +49,7 @@ export class AppComponent implements OnInit, OnDestroy {
       .subscribe((data) => {
         this.papa.parse(data, {
           complete: (result) => {
-            this.csv2 = result;
+            this.csv2 = result.data;
             console.log(this.csv2);
           },
         });
@@ -53,27 +57,128 @@ export class AppComponent implements OnInit, OnDestroy {
     this.json2Subs = this.http
       .get('../assets/csvFile/example2/example2.json', { responseType: 'text' })
       .subscribe((data) => {
-        this.json2 = JSON.parse(data);
+        let temp = JSON.parse(data);
+        this.json2 = temp['categories'];
         console.log(this.json2);
       });
   }
 
-  test(e?: any) {
-    let hola = {
-      categories: {
-        car: '+12%',
-        outlet: '-1%',
-        bargain: '+5%+1€',
-        home: '+3€-1%',
-        music: '+3.1%',
-        mobile: '+12€',
-        '*': '+20%',
-      },
-    };
-    console.log(Object.keys(hola.categories));
-    console.log(Object.values(hola.categories));
-    console.log(Object.values(this.json1['categories']));
-    console.log(e);
+  getCostValue(stringCostValue: string): string {
+    let newArray = stringCostValue.split('');
+    for (let i = 0; i < newArray.length; i++) {
+      if (newArray[i] === '.') {
+        newArray.splice(i, 1);
+        i++;
+      } else if (newArray[i] === ',') {
+        newArray[i] = '.';
+      }
+      if (i === newArray.length - 1) {
+        return newArray.join('');
+      }
+    }
+  }
+
+  test(fileName: Array<string>, categoriesFile: Object) {
+    let categories = this.getCategories(categoriesFile);
+    console.log(categories);
+    
+    let resp: Profit[] = [];
+    let categoryIndex: number = fileName[0].indexOf('CATEGORY');
+    let costIndex: number = fileName[0].indexOf('COST');
+    let quantityIndex: number = fileName[0].indexOf('QUANTITY');
+    let categoryFound: Category;
+    let categotyDefault: Category;
+    let exist:boolean
+    let existIndex:number;
+    for (let i = 1; i < fileName.length; i++) {
+      if (resp.length === 0) {
+        resp.splice(0, 0, { ...newProfit });
+        resp[resp.length - 1].category = fileName[i][categoryIndex];
+      } else if(resp.length > 0){
+        resp.forEach((data:Profit, a)=>{
+          if (data.category === fileName[i][categoryIndex]) {
+            existIndex = a
+            exist = true
+          }
+          console.log('Repetido');
+        })
+        if (!exist) {
+          resp.splice(resp.length, 0, { ...newProfit });
+          resp[resp.length - 1].category = fileName[i][categoryIndex];
+        } else {
+          // resp.pop();
+          console.log('EXIASTE');
+     
+        }
+        console.log(resp);
+        
+      }
+
+      categoryFound = null;
+      categories.forEach((category: Category) => {
+        if (category.category === fileName[i][categoryIndex]) {
+          categoryFound = category;
+          return console.log(categoryFound);
+        } else if (category.category === '*') {
+          categotyDefault = category;
+        }
+      });
+      if (categoryFound != null) {
+        let cost = parseFloat(this.getCostValue(fileName[i][costIndex]));
+        let costTemp = 0;
+        categoryFound.value.forEach((values: Values) => {
+          values.unit === '%'
+            ? (costTemp = costTemp + cost * values.value)
+            : (costTemp =
+                costTemp +
+                parseFloat(this.getCostValue(fileName[i][quantityIndex])) *
+                  values.value);
+        });
+        if (exist) {
+          resp[existIndex].profit = resp[existIndex].profit+ costTemp;
+        } else{
+
+          resp[resp.length - 1].profit = costTemp;
+        }
+      } else if( categoryFound === null) {
+        categoryFound = categotyDefault;
+        console.log(categoryFound)
+        
+        let cost = parseFloat(this.getCostValue(fileName[i][costIndex]));
+        let costTemp=0;
+        categotyDefault.value.forEach((values: Values) => {
+          values.unit === '%'
+            ? (costTemp = costTemp + cost * values.value)
+            : (costTemp =
+                costTemp +
+                parseFloat(this.getCostValue(fileName[i][quantityIndex])) *
+                  values.value);
+        });
+        if (exist) {
+          resp[existIndex].profit = resp[existIndex].profit+costTemp;
+        } else{
+
+          resp[resp.length - 1].profit = costTemp;
+        }
+      }
+      console.log(resp);
+      // if(exist){
+      //   i++
+      // }
+      categoryFound = null;
+      existIndex = 0;
+          exist = false;
+    }
+
+    // if (fileName[0].indexOf('CATEGORY') > -1) {
+    //   console.log(fileName[0].indexOf('CATEGORY'));
+
+    //   console.log('si hay');
+    // }
+
+    // // console.log(this.csv1.data);
+    // // console.log(e);
+    // console.log('sigue');
   }
 
   getValues(stringValue: string): Values[] {
@@ -83,18 +188,21 @@ export class AppComponent implements OnInit, OnDestroy {
     let newArray = stringValue.split('');
     let tempStringValue: string;
     let reference = 0;
-
     for (let i = newArray.length - 1; i >= 0; i--) {
       if (newArray[i] === percent) {
         value.splice(reference, 0, { ...newValues });
         value[reference].unit = percent;
-        value[reference].value = parseFloat(tempStringValue);
+        if (reference > 0) {
+          value[reference - 1].value = parseFloat(tempStringValue);
+        }
         tempStringValue = '';
         reference++;
       } else if (newArray[i] === currency) {
         value.splice(reference, 0, { ...newValues });
         value[reference].unit = currency;
-        value[reference - 1].value = parseFloat(tempStringValue);
+        if (reference > 0) {
+          value[reference - 1].value = parseFloat(tempStringValue);
+        }
         tempStringValue = '';
         reference++;
       } else {
@@ -107,17 +215,19 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  getCategories(fileName: any) {
-    let categories: Category[];
-    let fileKeys = Object.keys(fileName);
-    let fileValues = Object.values(fileName);
-    // for (let i = 0; i < fileKeys.length; i++) {
-    //   let tempValue: Values;
-    //   tempValue.title = fileKeys[i]
-    //   tempValue.value = fileValues[i];
-    //   test.push()
-
-    // }
+  getCategories(fileName: Object): Category[] {
+    let categories: Category[] = [];
+    let fileKeys: string[] = Object.keys(fileName);
+    let fileValues: string[] = Object.values(fileName);
+    for (let i = 0; i < fileKeys.length; i++) {
+      categories.splice(i, 0, { ...newCategory });
+      categories[i].category = fileKeys[i];
+      categories[i].value = this.getValues(fileValues[i]);
+      if (i === fileKeys.length - 1) {
+        console.log(categories);
+        return categories;
+      }
+    }
   }
 
   ngOnDestroy(): void {
