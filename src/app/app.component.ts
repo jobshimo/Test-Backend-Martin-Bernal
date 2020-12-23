@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Papa, ParseResult } from 'ngx-papaparse';
+import { Papa } from 'ngx-papaparse';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { Values, newValues } from './models/values.model';
@@ -135,29 +135,26 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   getValues(stringValue: string): Values[] {
-    let percent = '%';
-    let currency = '€';
+    let percent:string = '%';
+    let currency:string = '€';
     let value: Values[] = [];
-    let newArray = stringValue.split('');
+    let newArray:Array<string> = stringValue.split('');
     let tempStringValue: string;
     let reference = 0;
+    function auxiliaryFunction(){  if (reference > 0) {
+     value[reference - 1].value = parseFloat(tempStringValue);
+   }
+   tempStringValue = '';
+   reference++;}
     for (let i = newArray.length - 1; i >= 0; i--) {
       if (newArray[i] === percent) {
         value.splice(reference, 0, { ...newValues });
         value[reference].unit = percent;
-        if (reference > 0) {
-          value[reference - 1].value = parseFloat(tempStringValue);
-        }
-        tempStringValue = '';
-        reference++;
+        auxiliaryFunction()
       } else if (newArray[i] === currency) {
         value.splice(reference, 0, { ...newValues });
         value[reference].unit = currency;
-        if (reference > 0) {
-          value[reference - 1].value = parseFloat(tempStringValue);
-        }
-        tempStringValue = '';
-        reference++;
+        auxiliaryFunction()
       } else {
         tempStringValue = newArray[i] + tempStringValue;
         if (i === 0) {
